@@ -47,6 +47,22 @@ impl<T> Drop for OkStack<T> {
     }
 }
 
+pub struct IntoIter<T>(OkStack<T>);
+
+impl<T> OkStack<T> {
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop()
+    }
+}
+
 #[cfg(test)]
 mod test_ok_stack {
     use super::OkStack;
@@ -89,5 +105,19 @@ mod test_ok_stack {
         }
         assert_eq!(stack.peek(), Some(&42));
         assert_eq!(stack.pop(), Some(42));
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut stack = OkStack::new();
+        stack.push(1);
+        stack.push(2);
+        stack.push(3);
+
+        let mut iter = stack.into_iter();
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), None);
     }
 }
