@@ -28,6 +28,14 @@ impl<T> OkStack<T> {
             node.elem
         })
     }
+
+    pub fn peek(&self) -> Option<&T> {
+        self.head.as_ref().map(|node| &node.elem)
+    }
+
+    pub fn peek_mut(&mut self) -> Option<&mut T> {
+        self.head.as_mut().map(|node| &mut node.elem)
+    }
 }
 
 impl<T> Drop for OkStack<T> {
@@ -63,5 +71,23 @@ mod test_ok_stack {
         assert_eq!(stack.pop(), Some(4));
         assert_eq!(stack.pop(), Some(1));
         assert_eq!(stack.pop(), None);
+    }
+
+    #[test]
+    fn peek() {
+        let mut stack = OkStack::new();
+        assert_eq!(stack.peek(), None);
+        assert_eq!(stack.peek_mut(), None);
+
+        stack.push(1);
+        stack.push(2);
+        stack.push(3);
+
+        assert_eq!(stack.peek(), Some(&3));
+        if let Some(v) = stack.peek_mut() {
+            *v = 42;
+        }
+        assert_eq!(stack.peek(), Some(&42));
+        assert_eq!(stack.pop(), Some(42));
     }
 }
