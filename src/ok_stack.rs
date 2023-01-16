@@ -86,6 +86,29 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
+pub struct IterMut<'a, T> {
+    next: Option<&'a mut Node<T>>,
+}
+
+impl<T> OkStack<T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        IterMut {
+            next: self.head.as_deref_mut(),
+        }
+    }
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next.take().map(|node| {
+            self.next = node.next.as_deref_mut();
+            &mut node.elem
+        })
+    }
+}
+
 #[cfg(test)]
 mod test_ok_stack {
     use super::OkStack;
@@ -156,5 +179,22 @@ mod test_ok_stack {
         assert_eq!(iter.next(), Some(&2));
         assert_eq!(iter.next(), Some(&1));
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn iter_mut() {
+        let mut stack = OkStack::new();
+        stack.push(1);
+        stack.push(2);
+        stack.push(3);
+
+        for d in stack.iter_mut() {
+            *d *= 2;
+        }
+
+        let mut iter = stack.iter_mut();
+        assert_eq!(iter.next(), Some(&mut 6));
+        assert_eq!(iter.next(), Some(&mut 4));
+        assert_eq!(iter.next(), Some(&mut 2));
     }
 }
