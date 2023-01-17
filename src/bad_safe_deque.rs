@@ -133,6 +133,28 @@ impl<T> Drop for BadSafeDeque<T> {
     }
 }
 
+pub struct IntoIter<T>(BadSafeDeque<T>);
+
+impl<T> BadSafeDeque<T> {
+    pub fn into_iter(self) -> IntoIter<T> {
+        IntoIter(self)
+    }
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.pop_front()
+    }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.0.pop_back()
+    }
+}
+
 #[cfg(test)]
 mod test_bad_safe_deque {
     use super::BadSafeDeque;
@@ -184,5 +206,22 @@ mod test_bad_safe_deque {
             *node = 5;
         };
         assert_eq!(*deque.peek_back().unwrap(), 5);
+    }
+
+    #[test]
+    fn into_iter() {
+        let mut deque = BadSafeDeque::new();
+        deque.push_front(1);
+        deque.push_front(2);
+        deque.push_front(3);
+        deque.push_front(4);
+
+        let mut iter = deque.into_iter();
+        assert_eq!(iter.next(), Some(4));
+        assert_eq!(iter.next_back(), Some(1));
+        assert_eq!(iter.next_back(), Some(2));
+        assert_eq!(iter.next(), Some(3));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next_back(), None);
     }
 }
