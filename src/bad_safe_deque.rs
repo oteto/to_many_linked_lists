@@ -1,4 +1,7 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    rc::Rc,
+};
 
 pub struct BadSafeDeque<T> {
     head: Link<T>,
@@ -98,6 +101,30 @@ impl<T> BadSafeDeque<T> {
             Rc::try_unwrap(old_tail).ok().unwrap().into_inner().elem
         })
     }
+
+    pub fn peek_front(&self) -> Option<Ref<T>> {
+        self.head
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.elem))
+    }
+
+    pub fn peek_back(&self) -> Option<Ref<T>> {
+        self.tail
+            .as_ref()
+            .map(|node| Ref::map(node.borrow(), |node| &node.elem))
+    }
+
+    pub fn peek_front_mut(&self) -> Option<RefMut<T>> {
+        self.head
+            .as_ref()
+            .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.elem))
+    }
+
+    pub fn peek_back_mut(&self) -> Option<RefMut<T>> {
+        self.tail
+            .as_ref()
+            .map(|node| RefMut::map(node.borrow_mut(), |node| &mut node.elem))
+    }
 }
 
 impl<T> Drop for BadSafeDeque<T> {
@@ -131,5 +158,31 @@ mod test_bad_safe_deque {
         assert_eq!(deque.pop_back(), Some(4));
         assert_eq!(deque.pop_front(), None);
         assert_eq!(deque.pop_back(), None);
+    }
+
+    #[test]
+    fn peek() {
+        let mut deque = BadSafeDeque::new();
+        assert!(deque.peek_front().is_none());
+        assert!(deque.peek_front_mut().is_none());
+        assert!(deque.peek_back().is_none());
+        assert!(deque.peek_back_mut().is_none());
+
+        deque.push_front(1);
+        deque.push_front(2);
+        deque.push_front(3);
+
+        assert_eq!(*deque.peek_front().unwrap(), 3);
+        assert_eq!(*deque.peek_back().unwrap(), 1);
+
+        if let Some(mut node) = deque.peek_front_mut() {
+            *node = 4;
+        };
+        assert_eq!(*deque.peek_front().unwrap(), 4);
+
+        if let Some(mut node) = deque.peek_back_mut() {
+            *node = 5;
+        };
+        assert_eq!(*deque.peek_back().unwrap(), 5);
     }
 }
